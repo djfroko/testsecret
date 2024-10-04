@@ -1,0 +1,7 @@
+{
+    "repo": "djfroko/testsecret",
+    "secrets": {
+        "SECRET_NAME_1": "valor_del_secreto_1",
+        "SECRET_NAME_2": "valor_del_secreto_2"
+    }
+}
