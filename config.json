@@ -3,5 +3,17 @@
     "secrets": {
         "SECRET_NAME_1": "valor_del_secreto_1",
         "SECRET_NAME_2": "valor_del_secreto_2"
+    },
+    "ENVIRONMENT_SECRETS": {
+        "dev": {
+            "DEPLOYER_TOKEN_DEV": "test"
+        },
+        "pre": {
+            "DEPLOYER_TOKEN_PRE": "test"
+        },
+        "pro": {
+            "DEPLOYER_TOKEN_BO1": "test",
+            "DEPLOYER_TOKEN_BO2": "test"
+        }
     }
 }
