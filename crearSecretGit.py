@@ -27,8 +27,11 @@ def get_public_key(owner, repo, headers):
     return response.json()
 
 # Función para crear o actualizar un secreto en el repositorio
-def create_or_update_secret(owner, repo, secret_name, encrypted_value, key_id, headers):
-    url = f"https://api.github.com/repos/{owner}/{repo}/actions/secrets/{secret_name}"
+def create_or_update_secret(owner, repo, secret_name, encrypted_value, key_id, headers, env_name=None):
+    if env_name:
+        url = f"https://api.github.com/repos/{owner}/{repo}/environments/{env_name}/secrets/{secret_name}"
+    else:
+        url = f"https://api.github.com/repos/{owner}/{repo}/actions/secrets/{secret_name}"
     
     data = {
         "encrypted_value": encrypted_value,
@@ -38,21 +41,7 @@ def create_or_update_secret(owner, repo, secret_name, encrypted_value, key_id, h
     print(f"Data: {data}")
     response = requests.put(url, headers=headers, data=json.dumps(data))
     response.raise_for_status()
-    print(f"Se ha creado/actualizado el secreto '{secret_name}'.")
-
-# Función para copiar un secreto a un entorno específico
-def copy_secret_to_environment(owner, repo, secret_name, encrypted_value, key_id, headers, env_name):
-    url = f"https://api.github.com/repos/{owner}/{repo}/environments/{env_name}/secrets/{secret_name}"
-    
-    data = {
-        "encrypted_value": encrypted_value,
-        "key_id": key_id
-    }
-    print(f"URL: {url}")
-    print(f"Data: {data}")
-    response = requests.put(url, headers=headers, data=json.dumps(data))
-    response.raise_for_status()
-    print(f"Se ha copiado el secreto '{secret_name}' al entorno '{env_name}'.")
+    print(f"Se ha creado/actualizado el secreto '{secret_name}' en el entorno '{env_name}'." if env_name else f"Se ha creado/actualizado el secreto '{secret_name}'.")
 
 # Leer configuración desde un archivo
 def read_config_from_file(file_path):
@@ -81,14 +70,20 @@ for secret_name, secret_value in secrets.items():
     encrypted_value = encrypt_secret(public_key, secret_value)
     create_or_update_secret(owner, repo, secret_name, encrypted_value, key_id, headers)
 
-# Copiar secretos a los entornos específicos
+# Crear o actualizar los secretos en los entornos específicos
+failed_secrets = {"dev": [], "pre": [], "pro": []}
 for env_name, env_secrets in environment_secrets.items():
-    print(f"Copiando secretos al entorno: {env_name}")
+    print(f"Procesando secretos para el entorno: {env_name}")
     for secret_name, secret_value in env_secrets.items():
         encrypted_value = encrypt_secret(public_key, secret_value)
         try:
-            copy_secret_to_environment(owner, repo, secret_name, encrypted_value, key_id, headers, env_name)
+            create_or_update_secret(owner, repo, secret_name, encrypted_value, key_id, headers, env_name=env_name)
         except requests.exceptions.HTTPError as e:
-            print(f"Error al copiar el secreto '{secret_name}' al entorno '{env_name}': {e}")
+            print(f"Error al crear/actualizar el secreto '{secret_name}' en el entorno '{env_name}': {e}")
+            failed_secrets[env_name].append(secret_name)
 
-print("Se han creado/actualizado los secretos.")
+print("Se han creado/actualizado todos los secretos correctamente.")
+print("No se han podido crear los siguientes secretos en los entornos específicos:")
+for env_name, secrets in failed_secrets.items():
+    if secrets:
+        print(f"Entorno '{env_name}': {', '.join(secrets)}")
