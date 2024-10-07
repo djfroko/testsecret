@@ -38,7 +38,7 @@ def create_or_update_secret(owner, repo, secret_name, encrypted_value, key_id, h
         "key_id": key_id
     }
     print(f"URL: {url}")
-    print(f"Data: {data}")
+    #print(f"Data: {data}")
     response = requests.put(url, headers=headers, data=json.dumps(data))
     response.raise_for_status()
     print(f"Se ha creado/actualizado el secreto '{secret_name}' en el entorno '{env_name}'." if env_name else f"Se ha creado/actualizado el secreto '{secret_name}'.")
@@ -71,7 +71,7 @@ for secret_name, secret_value in secrets.items():
     create_or_update_secret(owner, repo, secret_name, encrypted_value, key_id, headers)
 
 # Crear o actualizar los secretos en los entornos específicos
-failed_secrets = {"dev": [], "pre": [], "pro": []}
+failed_secrets = {"certification": [], "preproduction": [], "production": []}
 for env_name, env_secrets in environment_secrets.items():
     print(f"Procesando secretos para el entorno: {env_name}")
     for secret_name, secret_value in env_secrets.items():
@@ -81,9 +81,3 @@ for env_name, env_secrets in environment_secrets.items():
         except requests.exceptions.HTTPError as e:
             print(f"Error al crear/actualizar el secreto '{secret_name}' en el entorno '{env_name}': {e}")
             failed_secrets[env_name].append(secret_name)
-
-print("Se han creado/actualizado todos los secretos correctamente.")
-print("No se han podido crear los siguientes secretos en los entornos específicos:")
-for env_name, secrets in failed_secrets.items():
-    if secrets:
-        print(f"Entorno '{env_name}': {', '.join(secrets)}")
